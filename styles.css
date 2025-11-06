@@ -34,11 +34,12 @@ h1 {
   gap: 20px;
 }
 
-.connection-card, .status-card {
+.connection-card,
+.status-card {
   background: white;
   border-radius: var(--border-radius);
   padding: 20px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
   flex: 1 1 300px;
 }
 
@@ -65,6 +66,24 @@ h1 {
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 14px;
+}
+
+/* 统一下拉框与按钮的高度与样式 */
+.option select {
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  background-color: #fff;
+  height: 40px;
+  /* 与按钮视觉高度一致 */
+  box-sizing: border-box;
+}
+
+.option select:disabled {
+  background-color: #f3f3f3;
+  color: #999;
+  cursor: not-allowed;
 }
 
 .actions {
@@ -116,9 +135,17 @@ button:disabled {
 }
 
 @keyframes flash {
-  0% { background-color: #ffeb3b; }
-  50% { background-color: #f8f9fa; }
-  100% { background-color: #ffeb3b; }
+  0% {
+    background-color: #ffeb3b;
+  }
+
+  50% {
+    background-color: #f8f9fa;
+  }
+
+  100% {
+    background-color: #ffeb3b;
+  }
 }
 
 /* Video display */

@@ -6,6 +6,7 @@
     <link rel="stylesheet" href="styles.css" />
     <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
   </head>
+
   <body>
     <div class="container">
       <h1>CrossDesk Web Client</h1>
@@ -16,7 +17,7 @@
           <h2>连接设置</h2>
           <div class="option">
             <label for="transmission-id">传输ID：</label>
-            <input id="transmission-id" type="text" value="475319798" />
+            <input id="transmission-id" type="text" value="931631602" />
           </div>
           <div class="option">
             <label for="transmission-pwd">密码：</label>
@@ -50,7 +51,19 @@
 
       <!-- Video display -->
       <div id="media" style="display: none">
-        <h2>远程画面 <span id="track-id" class="track-id"></span></h2>
+        <div class="option" style="margin-bottom: 12px">
+          <label for="display-id">显示器 ID: </label>
+          <select id="display-id" style="width: 160px" disabled>
+            <option value="" selected>等待轨道ID...</option>
+          </select>
+          <button
+            id="set-display"
+            disabled
+            onclick="CrossDeskControl.setDisplayId()"
+          >
+            设置
+          </button>
+        </div>
         <video
           id="video"
           playsinline
@@ -60,8 +73,46 @@
           muted
         ></video>
       </div>
+
+      <!-- Data Channel UI -->
+      <div class="top-card">
+        <div class="connection-card">
+          <h2>数据通道</h2>
+          <div class="option">
+            <label for="audio-capture">采集音频：</label>
+            <input id="audio-capture" type="checkbox" disabled />
+          </div>
+
+          <div
+            id="data-channel"
+            class="status-item"
+            style="
+              height: 200px;
+              overflow: auto;
+              white-space: pre-wrap;
+              font-family: monospace;
+            "
+          ></div>
+          <div style="display: flex; gap: 8px; margin-top: 10px">
+            <input
+              id="dc-input"
+              type="text"
+              placeholder="输入要发送的消息"
+              style="flex: 1; padding: 8px"
+            />
+            <button
+              id="dc-send"
+              onclick="CrossDeskControl.sendDataChannelMessage()"
+              disabled
+            >
+              发送
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <script src="web_client.js"></script>
+    <script src="control.js"></script>
+    <script src="webrtc_client.js"></script>
   </body>
 </html>
