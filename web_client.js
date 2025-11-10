@@ -38,6 +38,8 @@ let pc = null;
 let clientId = "000000";
 let heartbeatTimer = null;
 let lastPongAt = Date.now();
+let trackIndex = 0; // Track index for display_id (0, 1, 2, ...)
+const trackMap = new Map(); // Map<index, track> - stores tracks by their display_id index
 
 const websocket = new WebSocket(CONFIG.signalingUrl);
 
@@ -219,7 +221,16 @@ function createPeerConnection() {
 
   peer.ontrack = ({ track, streams }) => {
     if (track.kind !== "video" || !elements.video) return;
+    
+    // Use track index as display_id (0, 1, 2, ...)
+    const currentIndex = trackIndex;
+    trackIndex++;
+    
+    // Store track in map
+    trackMap.set(currentIndex, track);
+    
     if (!elements.video.srcObject) {
+      // First track: create new stream
       const stream = streams && streams[0] ? streams[0] : new MediaStream([track]);
       elements.video.srcObject = stream;
       elements.video.muted = true;
@@ -232,23 +243,37 @@ function createPeerConnection() {
       // Wait for first frame to be decoded before hiding connecting overlay
       hideConnectingOverlayOnFirstFrame();
     } else {
+      // Additional track: add to existing stream
       elements.video.srcObject.addTrack(track);
     }
 
     if (!elements.displaySelect) return;
-    const trackId = track.id || "";
-    if (!trackId) return;
-
+    
+    // Remove placeholder option "候选画面 ID..." when first track arrives
+    if (currentIndex === 0) {
+      const placeholderOption = Array.from(elements.displaySelect.options).find(
+        (opt) => opt.value === ""
+      );
+      if (placeholderOption) {
+        placeholderOption.remove();
+      }
+    }
+    
+    // Check if option with this index already exists
     const existingOption = Array.from(elements.displaySelect.options).find(
-      (opt) => opt.value === trackId
+      (opt) => opt.value === String(currentIndex)
     );
     if (!existingOption) {
       const option = document.createElement("option");
-      option.value = trackId;
-      option.textContent = trackId;
+      option.value = String(currentIndex);
+      option.textContent = track.id || `Display ${currentIndex}`;
       elements.displaySelect.appendChild(option);
     }
-    elements.displaySelect.value = trackId;
+    // Only set default value for the first track (index 0)
+    // Don't auto-switch when additional tracks arrive
+    if (currentIndex === 0 && !elements.displaySelect.value) {
+      elements.displaySelect.value = String(currentIndex);
+    }
   };
 
   peer.ondatachannel = (event) => {
@@ -398,6 +423,12 @@ function disconnect() {
   updateStatus(elements.iceState, "");
   updateStatus(elements.signalingState, "");
   updateStatus(elements.dataChannelState, "closed");
+  // Reset track index and clear display select options
+  trackIndex = 0;
+  trackMap.clear();
+  if (elements.displaySelect) {
+    elements.displaySelect.innerHTML = '<option value="" selected>候选画面 ID...</option>';
+  }
   // Reset status LEDs and hide indicator
   updateStatusLed(elements.connectionStatusLed, false, true);
   updateStatusLed(elements.connectedStatusLed, false, false);
@@ -497,10 +528,33 @@ function enableDataChannelUi(enabled) {
 function setDisplayId() {
   if (!elements.displaySelect) return;
   const raw = elements.displaySelect.value.trim();
-  if (!raw) return;
+  if (!raw) {
+    // 如果值为空，不发送（保持原有行为）
+    return;
+  }
   const parsed = parseInt(raw, 10);
-  const numericValue = Number.isFinite(parsed) ? parsed : 0;
-  control.sendDisplayId(numericValue);
+  // 检查解析结果：如果解析失败（NaN）或者不是有效数字，不发送
+  if (isNaN(parsed) || !Number.isFinite(parsed)) {
+    console.warn("setDisplayId: Invalid display_id value:", raw);
+    return;
+  }
+  
+  // Switch video track to the selected display_id
+  const selectedTrack = trackMap.get(parsed);
+  if (selectedTrack && elements.video) {
+    // Don't stop tracks - just replace the stream
+    // Stopping tracks makes them unusable
+    const newStream = new MediaStream([selectedTrack]);
+    elements.video.srcObject = newStream;
+    elements.video.muted = true;
+    elements.video.setAttribute("playsinline", "true");
+    elements.video.setAttribute("webkit-playsinline", "true");
+    elements.video.setAttribute("x5-video-player-type", "h5");
+    elements.video.setAttribute("x5-video-player-fullscreen", "true");
+    elements.video.autoplay = true;
+  }
+  
+  control.sendDisplayId(parsed);
 }
 
 
@@ -1142,7 +1196,7 @@ if (elements.connectedOverlay) {
       
       document.addEventListener("touchmove", onTouchMove);
       document.addEventListener("touchend", onTouchEnd);
-    });
+    }, { passive: false });
   }
   
   

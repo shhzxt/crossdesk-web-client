@@ -205,9 +205,15 @@
     }
 
     sendDisplayId(id) {
+      // 确保 id 是有效数字
+      const numericId = typeof id === "number" && Number.isFinite(id) ? id : parseInt(id, 10);
+      if (isNaN(numericId) || !Number.isFinite(numericId)) {
+        console.warn("sendDisplayId: Invalid display_id:", id);
+        return;
+      }
       const action = {
         type: ControlType.display_id,
-        display_id: id | 0,
+        display_id: numericId | 0,
       };
       this.send(action);
     }
@@ -299,6 +305,11 @@
         return;
       }
       
+      // Skip if clicking inside panel area
+      if (this.isInsidePanel(event.clientX, event.clientY)) {
+        return;
+      }
+      
       // Skip if dragging panel
       if (this.state.draggingPanel) {
         return;
@@ -350,6 +361,11 @@
       // Skip if touching panel elements
       const target = event.target;
       if (target && (target.closest("#panel-collapsed-bar") || target.closest("#connected-panel"))) {
+        return;
+      }
+      
+      // Skip if moving inside panel area
+      if (this.isInsidePanel(event.clientX, event.clientY)) {
         return;
       }
       
@@ -451,6 +467,12 @@
     }
 
     onPointerUp(event) {
+      // Skip if releasing inside panel area
+      if (this.isInsidePanel(event.clientX, event.clientY)) {
+        this.elements.video?.releasePointerCapture?.(event.pointerId ?? 0);
+        return;
+      }
+      
       // 移动端模式下，触摸结束不触发点击事件
       if (this.state.isMobile && event.pointerType === "touch") {
         this.elements.video?.releasePointerCapture?.(event.pointerId ?? 0);
@@ -485,6 +507,11 @@
       if (now - this.state.lastWheelAt < 50) return;
       this.state.lastWheelAt = now;
 
+      // Skip if wheeling inside panel area
+      if (this.isInsidePanel(event.clientX, event.clientY)) {
+        return;
+      }
+
       this.ensureVideoRect();
       if (!this.state.videoRect) return;
 
@@ -517,12 +544,18 @@
         return;
       }
       
+      const touch = event.touches[0];
+      
+      // Skip if touching inside panel area
+      if (this.isInsidePanel(touch.clientX, touch.clientY)) {
+        return;
+      }
+      
       // Skip if pinch zoom is active, dragging panel, or if two touches (pinch gesture)
       if (this.state.pinchZoomActive || this.state.draggingPanel || event.touches.length === 2) {
         return;
       }
       
-      const touch = event.touches[0];
       event.preventDefault();
       
       // 移动端模式下，触摸视频区域不触发点击事件
@@ -554,12 +587,18 @@
         return;
       }
       
+      const touch = event.touches[0];
+      
+      // Skip if moving inside panel area
+      if (this.isInsidePanel(touch.clientX, touch.clientY)) {
+        return;
+      }
+      
       // Skip if pinch zoom is active, dragging panel, or if two touches (pinch gesture)
       if (this.state.pinchZoomActive || this.state.draggingPanel || event.touches.length === 2) {
         return;
       }
       
-      const touch = event.touches[0];
       event.preventDefault();
       
       this.ensureVideoRect();
@@ -630,6 +669,18 @@
     isInsideVideo(clientX, clientY) {
       const rect = this.state.videoRect;
       if (!rect) return false;
+      return (
+        clientX >= rect.left &&
+        clientX <= rect.right &&
+        clientY >= rect.top &&
+        clientY <= rect.bottom
+      );
+    }
+
+    isInsidePanel(clientX, clientY) {
+      const panel = document.getElementById("connected-panel");
+      if (!panel) return false;
+      const rect = panel.getBoundingClientRect();
       return (
         clientX >= rect.left &&
         clientX <= rect.right &&
@@ -1136,7 +1187,7 @@
       if (keyboardToggleMouse) {
         keyboardToggleMouse.addEventListener("touchstart", (e) => {
           e.stopPropagation();
-        });
+        }, { passive: true });
         keyboardToggleMouse.addEventListener("click", (e) => {
           e.stopPropagation();
         });
@@ -1146,7 +1197,7 @@
       if (this.elements.virtualMouseMinimize) {
         this.elements.virtualMouseMinimize.addEventListener("touchstart", (e) => {
           e.stopPropagation();
-        });
+        }, { passive: true });
         this.elements.virtualMouseMinimize.addEventListener("click", (e) => {
           e.stopPropagation();
         });
@@ -1174,7 +1225,7 @@
       if (keyboardClose) {
         keyboardClose.addEventListener("touchstart", (e) => {
           e.stopPropagation();
-        });
+        }, { passive: true });
         keyboardClose.addEventListener("click", (e) => {
           e.stopPropagation();
         });

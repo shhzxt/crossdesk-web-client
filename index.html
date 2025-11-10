@@ -10,6 +10,7 @@
     <title>CrossDesk Web Client</title>
 
     <!-- iOS Web App 配置 -->
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta
       name="apple-mobile-web-app-status-bar-style"
@@ -51,18 +52,20 @@
               ></div>
             </div>
           </div>
-          <div class="option">
-            <label for="transmission-id">远程设备 ID:</label>
-            <input id="transmission-id" type="text" value="" />
-          </div>
-          <div class="option">
-            <label for="transmission-pwd">密码:</label>
-            <input id="transmission-pwd" type="password" value="" />
-          </div>
-          <div class="actions">
-            <button id="connect" disabled>连接</button>
-            <button id="disconnect" style="display: none">断开连接</button>
-          </div>
+          <form>
+            <div class="option">
+              <label for="transmission-id">远程设备 ID:</label>
+              <input id="transmission-id" type="text" value="" autocomplete="off" />
+            </div>
+            <div class="option">
+              <label for="transmission-pwd">密码:</label>
+              <input id="transmission-pwd" type="password" value="" autocomplete="current-password" />
+            </div>
+            <div class="actions">
+              <button id="connect" type="button" disabled>连接</button>
+              <button id="disconnect" type="button" style="display: none">断开连接</button>
+            </div>
+          </form>
         </div>
       </div>
 
